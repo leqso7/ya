@@ -1704,5 +1704,110 @@ async function checkPassword() {
 <script>
     
 </script>
-
+<script>
+  // დავამატოთ სტილიზებული კონსოლ ლოგები
+  const logger = {
+      success: (msg) => console.log(`%c✅ ${msg}`, 'color: #4CAF50; font-weight: bold;'),
+      error: (msg) => console.log(`%c❌ ${msg}`, 'color: #f44336; font-weight: bold;'),
+      info: (msg) => console.log(`%cℹ️ ${msg}`, 'color: #2196F3; font-weight: bold;'),
+      warning: (msg) => console.log(`%c⚠️ ${msg}`, 'color: #FFC107; font-weight: bold;')
+  };
+  
+  // ონლაინ/ოფლაინ სტატუსის მონიტორინგი
+  function updateOnlineStatus() {
+      const status = document.getElementById('connectionStatus');
+      
+      if (navigator.onLine) {
+          status.style.display = 'block';
+          status.style.backgroundColor = '#4CAF50';
+          status.textContent = '🟢 ონლაინ რეჟიმი';
+          logger.success('წარმატებით გადავედით ონლაინ რეჟიმში');
+          setTimeout(() => {
+              status.style.display = 'none';
+          }, 3000);
+      } else {
+          status.style.display = 'block';
+          status.style.backgroundColor = '#f44336';
+          status.textContent = '🔴 ოფლაინ რეჟიმი';
+          logger.warning('გადავედით ოფლაინ რეჟიმში');
+      }
+  }
+  
+  // Service Worker-ის სტატუსის შემოწმება
+  async function checkServiceWorkerStatus() {
+      try {
+          if ('serviceWorker' in navigator) {
+              const registration = await navigator.serviceWorker.getRegistration();
+              if (registration) {
+                  logger.success('Service Worker აქტიურია');
+                  logger.info(`Service Worker სტატუსი: ${registration.active ? 'აქტიური' : 'არააქტიური'}`);
+              } else {
+                  logger.error('Service Worker არ არის რეგისტრირებული');
+              }
+          } else {
+              logger.error('ბრაუზერი არ უჭერს მხარს Service Worker-ს');
+          }
+      } catch (error) {
+          logger.error('Service Worker-ის შემოწმებისას მოხდა შეცდომა:', error);
+      }
+  }
+  
+  // ქეშის სტატუსის შემოწმება
+  async function checkCacheStatus() {
+      try {
+          const cache = await caches.open('student-selector-v1');
+          const keys = await cache.keys();
+          logger.info(`ქეშირებული რესურსების რაოდენობა: ${keys.length}`);
+          keys.forEach(request => {
+              logger.info(`ქეშირებული: ${request.url}`);
+          });
+      } catch (error) {
+          logger.error('ქეშის შემოწმებისას მოხდა შეცდომა:', error);
+      }
+  }
+  
+  // ოფლაინ მუშაობის ტესტი
+  async function testOfflineCapability() {
+      try {
+          const response = await fetch(window.location.href);
+          if (response.ok) {
+              logger.success('აპლიკაცია წარმატებით ჩაიტვირთა');
+              return true;
+          } else {
+              logger.error(`ჩატვირთვის შეცდომა: ${response.status}`);
+              return false;
+          }
+      } catch (error) {
+          logger.error('ჩატვირთვის შეცდომა:', error);
+          return false;
+      }
+  }
+  
+  // ინიციალიზაცია
+  document.addEventListener('DOMContentLoaded', async () => {
+      logger.info('აპლიკაციის ინიციალიზაცია...');
+      
+      // სტატუსების შემოწმება
+      await checkServiceWorkerStatus();
+      await checkCacheStatus();
+      
+      // ონლაინ/ოფლაინ მონიტორინგის დაწყება
+      window.addEventListener('online', updateOnlineStatus);
+      window.addEventListener('offline', updateOnlineStatus);
+      updateOnlineStatus();
+      
+      // ინსტრუქციები კონსოლში
+      logger.info('ოფლაინ რეჟიმის ტესტირებისთვის:');
+      logger.info('1. გათიშეთ ინტერნეტი');
+      logger.info('2. განაახლეთ გვერდი (F5)');
+      logger.info('3. თუ გვერდი ჩაიტვირთა, ოფლაინ რეჟიმი მუშაობს');
+  });
+  
+  // პერიოდული სტატუსის შემოწმება
+  setInterval(async () => {
+      await checkServiceWorkerStatus();
+      await checkCacheStatus();
+  }, 30000); // ყოველ 30 წამში ერთხელ
+  
+  </script>
 </body></html>
